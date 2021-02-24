@@ -33,7 +33,6 @@ services:
           - streaming-data-internal
         depends_on:
           - hadoop
-        restart: on-failure
 
     zookeeper:
         image: zookeeper:3.3.6
@@ -95,7 +94,6 @@ services:
           - ~/.ivy2:/root/.ivy2:rw
         networks:
           - streaming-data-internal
-        restart: on-failure
 
     raw-station-status-data-saver:
         build:
@@ -112,7 +110,6 @@ services:
           - ~/.ivy2:/root/.ivy2:rw
         networks:
           - streaming-data-internal
-        restart: on-failure
 
     raw-station-data-san-francisco-saver:
         build:
@@ -129,7 +126,6 @@ services:
           - ~/.ivy2:/root/.ivy2:rw
         networks:
           - streaming-data-internal
-        restart: on-failure
 
     station-consumer:
         build:
@@ -145,7 +141,6 @@ services:
         command: ["./wait-for.sh", "zookeeper:2181", "-t", "30"]
         networks:
           - streaming-data-internal
-        restart: on-failure
 
     station-transformer-nyc:
         build:
@@ -161,7 +156,6 @@ services:
         command: ["./wait-for.sh", "zookeeper:2181", "-t", "30"]
         networks:
           - streaming-data-internal
-        restart: on-failure
 
 networks:
     streaming-data-internal:
