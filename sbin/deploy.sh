@@ -15,6 +15,7 @@ fi
 BASTION_PUBLIC_IP=$1
 TRAINING_COHORT=$2
 ZOOKEEPER_CONFIG="kafka1.${TRAINING_COHORT}.training:2181,kafka2.${TRAINING_COHORT}.training:2181,kafka3.${TRAINING_COHORT}.training:2181"
+KAFKA_BROKERS="kafka1.${TRAINING_COHORT}.training:9092,kafka2.${TRAINING_COHORT}.training:9092,kafka3.${TRAINING_COHORT}.training:9092"
 
 echo "====Updating SSH Config===="
 
@@ -49,7 +50,7 @@ scp ./zookeeper/seed.sh kafka.${TRAINING_COHORT}.training:/tmp/zookeeper-seed.sh
 ssh kafka.${TRAINING_COHORT}.training <<EOF
 set -e
 export hdfs_server="emr-master.${TRAINING_COHORT}.training:8020"
-export kafka_server="kafka1.${TRAINING_COHORT}.training:9092,kafka2.${TRAINING_COHORT}.training:9092,kafka3.${TRAINING_COHORT}.training:9092"
+export kafka_server="${KAFKA_BROKERS}"
 export zk_command="zookeeper-shell localhost:2181"
 sh /tmp/zookeeper-seed.sh
 EOF
@@ -89,9 +90,9 @@ kill_process \${station_san_francisco}
 echo "====Runing Producers Killed===="
 
 echo "====Deploy Producers===="
-nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active=\${station_information} --kafka.brokers=kafka.${TRAINING_COHORT}.training:9092 1>/tmp/\${station_information}.log 2>/tmp/\${station_information}.error.log &
-nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active=\${station_san_francisco} --producer.topic=station_data_sf --kafka.brokers=kafka.${TRAINING_COHORT}.training:9092 1>/tmp/\${station_san_francisco}.log 2>/tmp/\${station_san_francisco}.error.log &
-nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active=\${station_status} --kafka.brokers=kafka.${TRAINING_COHORT}.training:9092 1>/tmp/\${station_status}.log 2>/tmp/\${station_status}.error.log &
+nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active=\${station_information} --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/\${station_information}.log 2>/tmp/\${station_information}.error.log &
+nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active=\${station_san_francisco} --producer.topic=station_data_sf --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/\${station_san_francisco}.log 2>/tmp/\${station_san_francisco}.error.log &
+nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active=\${station_status} --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/\${station_status}.log 2>/tmp/\${station_status}.error.log &
 
 echo "====Producers Deployed===="
 EOF
