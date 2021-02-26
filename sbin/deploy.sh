@@ -49,7 +49,7 @@ scp ./zookeeper/seed.sh kafka.${TRAINING_COHORT}.training:/tmp/zookeeper-seed.sh
 ssh kafka.${TRAINING_COHORT}.training <<EOF
 set -e
 export hdfs_server="emr-master.${TRAINING_COHORT}.training:8020"
-export kafka_server="kafka.${TRAINING_COHORT}.training:9092"
+export kafka_server="kafka1.${TRAINING_COHORT}.training:9092,kafka2.${TRAINING_COHORT}.training:9092,kafka3.${TRAINING_COHORT}.training:9092"
 export zk_command="zookeeper-shell localhost:2181"
 sh /tmp/zookeeper-seed.sh
 EOF
