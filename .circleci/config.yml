@@ -35,6 +35,19 @@ jobs:
                 paths:
                     - "~/.gradle"
 
+    upload:
+        <<: *defaults
+        steps:
+            - checkout
+            - attach_workspace:
+                at: /home/circleci/project
+            - add_ssh_keys:
+                fingerprints:
+                  - "23:1f:be:07:c1:29:10:65:fb:d8:7a:a2:35:1d:01:6d"
+            - run:
+                command: ./sbin/upload.sh $BASTION_PUBLIC_IP $TRAINING_COHORT $CIRCLE_SHA1
+
+
     deploy:
         <<: *defaults
         steps:
@@ -57,11 +70,13 @@ workflows:
                         only: 
                             - master
                             - start
+            - upload:
+                requires:
+                    - build
             - approve-deploy:
                 type: approval
                 requires: 
-                    - build
+                    - upload
             - deploy:
                 requires:
                     - approve-deploy
-
