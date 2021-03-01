@@ -5,6 +5,7 @@ set -e
 BASTION_PUBLIC_IP=$1
 TRAINING_COHORT=$2
 GIT_REVISION=$3
+ENVIRONMENT=${1:-test}
 
 configure_ssh() {
   if [ -z "${CI}" ]; then
@@ -31,33 +32,31 @@ Host *.${TRAINING_COHORT}.training !bastion.${TRAINING_COHORT}.training
   fi
 }
 
-upload() {
+upgrade() {
   local target_host="$1.${TRAINING_COHORT}.training"
+  local target_versioned_dir="/tmp/streaming-pipelines-$2/"
+  local target_dir="/tmp/$3/"
 
-  local src=$2
-  local program_name
-  program_name=$(basename "$src")
-
-  local target_versioned_dir="/tmp/streaming-pipelines-${GIT_REVISION}/"
-  local target_versioned="${target_versioned_dir}${program_name}"
-
-  ssh "${target_host}" mkdir -p "${target_versioned_dir}"
-  echo -n "copying ${src} to ${target_host}:${target_versioned} ... "
-  scp "${src}" "${target_host}:${target_versioned}"
+  # shellcheck disable=SC2087
+  echo -n "Upgrading ${target_dir} to ${target_versioned_dir} ... "
+  ssh "${target_host}" <<EOF
+rm -rf "${target_dir}"
+mkdir -p "${target_dir}"
+ln -s "${target_versioned_dir}" "${target_dir}"
+EOF
   echo "done"
 }
 
 usage() {
   echo "Deployment script usage"
-  echo "./upload.sh BASTION_PUBLIC_IP TRAINING_COHORT GIT_REVISION"
+  echo "./upload.sh BASTION_PUBLIC_IP TRAINING_COHORT GIT_REVISION [ENVIRONMENT]"
+  echo "  NOTE: default for ENVIRONMENT is test"
 }
 
 main() {
   configure_ssh
-  upload ingester CitibikeApiProducer/build/libs/tw-citibike-apis-producer0.1.0.jar
-  upload emr-master RawDataSaver/target/scala-2.11/tw-raw-data-saver_2.11-0.0.1.jar
-  upload emr-master StationConsumer/target/scala-2.11/tw-station-consumer_2.11-0.0.1.jar
-  upload emr-master StationTransformerNYC/target/scala-2.11/tw-station-transformer-nyc_2.11-0.0.1.jar
+  upgrade ingester "${GIT_REVISION}" "${ENVIRONMENT}"
+  upgrade emr-master "${GIT_REVISION}" "${ENVIRONMENT}"
 }
 
 [ $# -lt 3 ] && usage && exit 1
