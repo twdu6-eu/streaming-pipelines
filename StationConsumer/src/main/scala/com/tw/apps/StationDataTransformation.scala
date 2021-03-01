@@ -2,12 +2,12 @@ package com.tw.apps
 
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.{udf, _}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
+import java.text.SimpleDateFormat
 import scala.util.parsing.json.JSON
 
 object StationDataTransformation {
@@ -55,4 +55,13 @@ object StationDataTransformation {
     jsonDF.select(from_json($"raw_payload", ScalaReflection.schemaFor[StationData].dataType) as "status")
       .select($"status.*")
   }
+
+  def lasUpdatedTimestamp2ISOFormat(combinedDS: Dataset[StationData], spark: SparkSession): Dataset[StationDataWithISOTimeStamp] = {
+    import spark.implicits._
+
+    combinedDS
+      .withColumn("last_updated", from_unixtime($"last_updated", "yyyy-MM-dd'T'HH:mm:ss"))
+      .as[StationDataWithISOTimeStamp]
+  }
+
 }

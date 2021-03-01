@@ -32,6 +32,8 @@ object StationApp {
       .appName("StationConsumer")
       .getOrCreate()
 
+    spark.conf.set("spark.sql.session.timeZone", "UTC")
+
     import spark.implicits._
 
     val nycStationDF = spark.readStream
@@ -58,6 +60,7 @@ object StationApp {
       .groupByKey(r=>r.station_id)
       .reduceGroups((r1,r2)=>if (r1.last_updated > r2.last_updated) r1 else r2)
       .map(_._2)
+      .transform(lasUpdatedTimestamp2ISOFormat(_, spark))
       .writeStream
       .format("overwriteCSV")
       .outputMode("complete")
