@@ -3,7 +3,7 @@ defaults: &defaults
         - image: circleci/openjdk:8-jdk
     working_directory: /home/circleci/project
 
-version: 2
+version: 2.1
 jobs:
     build:
         <<: *defaults
