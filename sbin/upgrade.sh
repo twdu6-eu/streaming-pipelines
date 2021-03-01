@@ -33,15 +33,15 @@ Host *.${TRAINING_COHORT}.training !bastion.${TRAINING_COHORT}.training
 }
 
 upgrade() {
+  [ $# -lt 3 ] && echo "function usage: upgrade TARGET GIT_REVISION ENVIRONMENT" && exit 2
   local target_host="$1.${TRAINING_COHORT}.training"
-  local target_versioned_dir="/tmp/streaming-pipelines-$2/"
-  local target_dir="/tmp/$3/"
+  local target_versioned_dir="/tmp/streaming-pipelines-$2"
+  local target_dir="/tmp/$3"
 
-  # shellcheck disable=SC2087
   echo -n "Upgrading ${target_dir} to ${target_versioned_dir} ... "
+  # shellcheck disable=SC2087
   ssh "${target_host}" <<EOF
 rm -rf "${target_dir}"
-mkdir -p "${target_dir}"
 ln -s "${target_versioned_dir}" "${target_dir}"
 EOF
   echo "done"
