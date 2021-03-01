@@ -13,8 +13,6 @@ topic_sf="${topic_prefix}station_data_sf"
 topic_station_status="${topic_prefix}station_status"
 topic_station_information="${topic_prefix}station_information"
 
-exit 1
-
 $zk_command rmr /tw
 $zk_command create /tw ''
 
