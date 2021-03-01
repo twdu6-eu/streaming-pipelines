@@ -5,7 +5,7 @@ set -e
 BASTION_PUBLIC_IP=$1
 TRAINING_COHORT=$2
 GIT_REVISION=$3
-ENVIRONMENT=${1:-test}
+ENVIRONMENT=${4:-test}
 
 configure_ssh() {
   if [ -z "${CI}" ]; then

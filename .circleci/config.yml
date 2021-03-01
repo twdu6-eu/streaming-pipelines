@@ -50,7 +50,7 @@ jobs:
     upgrade:
         <<: *defaults
         parameters:
-            namespace:
+            environment:
                 type: string
         steps:
             - checkout
@@ -60,7 +60,7 @@ jobs:
                   fingerprints:
                       - "23:1f:be:07:c1:29:10:65:fb:d8:7a:a2:35:1d:01:6d"
             - run:
-                  command: ./sbin/upgrade.sh $BASTION_PUBLIC_IP $TRAINING_COHORT $CIRCLE_SHA1 << parameters.namespace >>
+                  command: ./sbin/upgrade.sh $BASTION_PUBLIC_IP $TRAINING_COHORT $CIRCLE_SHA1 << parameters.environment >>
 
     deploy:
         <<: *defaults
@@ -88,7 +88,7 @@ workflows:
                 requires:
                     - build
             - upgrade:
-                namespace: test
+                environment: test
                 requires:
                     - upload
             - approve-deploy:
