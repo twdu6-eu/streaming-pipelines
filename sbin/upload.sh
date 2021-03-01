@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 set -e
-[ ${CI} ] && set -x
 
 BASTION_PUBLIC_IP=$1
 TRAINING_COHORT=$2
 GIT_REVISION=$3
+ENVIRONMENT=${$1:-test}
 
 configure_ssh() {
   if [ -z "${CI}" ]; then
@@ -44,19 +44,20 @@ upload() {
   local program_name
   program_name=$(basename "$src")
 
-  local target="/tmp/${program_name}"
+  local target_dir="/tmp/${ENVIRONMENT}/"
+  local target="${target_dir}${program_name}"
   local target_versioned_dir="/tmp/streaming-pipelines-${GIT_REVISION}/"
   local target_versioned="${target_versioned_dir}${program_name}"
 
-  ssh "${target_host}" mkdir -p "${target_versioned_dir}"
+  ssh "${target_host}" mkdir -p "${target_dir}" "${target_versioned_dir}"
   scp "${src}" "${target_host}:${target_versioned}"
-  ssh "${target_host}" rm -f "${target}"
-  ssh "${target_host}" ln -s "${target_versioned}" "${target}"
+  ssh "${target_host}" ln -sf "${target_versioned}" "${target}"
 }
 
 usage() {
-  echo "Deployment script "
-  echo "./upload.sh BASTION_PUBLIC_IP TRAINING_COHORT GIT_REVISION"
+  echo "Deployment script usage"
+  echo "./upload.sh BASTION_PUBLIC_IP TRAINING_COHORT GIT_REVISION [ENVIRONMENT]"
+  echo "  NOTE: default for ENVIRONMENT is test"
 }
 
 main() {
