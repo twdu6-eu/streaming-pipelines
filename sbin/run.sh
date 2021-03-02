@@ -64,11 +64,9 @@ run_ingester_process() {
   jar=$1
   spring_profile=$2
   producer_topic=$3
-  nohup java -jar ${jar} \
-    --spring.profiles.active=${spring_profile} \
-    --producer.topic=${producer_topic} \
-    --kafka.brokers=${KAFKA_BROKERS} \
-    1>/tmp/${spring_profile}.log 2>/tmp/${spring_profile}.error.log &
+  echo -n "Running ${jar} with ${spring_profile} to produce ${producer_topic} ... "
+  nohup java -jar ${jar} --spring.profiles.active=${spring_profile} --producer.topic=${producer_topic} --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/${spring_profile}.log 2>/tmp/${spring_profile}.error.log &
+  echo "done"
 }
 
 run_ingesters() {
