@@ -1,9 +1,10 @@
+version: 2.1
+
 defaults: &defaults
     docker:
         - image: circleci/openjdk:8-jdk
     working_directory: /home/circleci/project
 
-version: 2.1
 jobs:
     build:
         <<: *defaults
@@ -88,13 +89,19 @@ workflows:
                 requires:
                     - build
             - upgrade:
+                name: upgrade-test
                 environment: test
                 requires:
                     - upload
             - approve-deploy:
                 type: approval
                 requires: 
-                    - upload
+                    - upgrade-test
+            - upgrade:
+                  name: upgrade-prod
+                  environment: prod
+                  requires:
+                      - approve-deploy
             - deploy:
                 requires:
-                    - approve-deploy
+                    - upgrade-prod
