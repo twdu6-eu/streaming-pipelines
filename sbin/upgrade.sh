@@ -41,7 +41,7 @@ upgrade() {
   echo -n "Upgrading ${target_dir} to ${target_versioned_dir} ... "
   # shellcheck disable=SC2087
   ssh "${target_host}" <<EOF
-rm -rf "${target_dir}"
+rm -f "${target_dir}"
 ln -s "${target_versioned_dir}" "${target_dir}"
 EOF
   echo "done"

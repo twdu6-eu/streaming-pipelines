@@ -3,13 +3,13 @@
 set -xe
 
 usage() {
-    echo "Deployment script "
-    echo "./deply.sh BASTION_PUBLIC_IP TRAINING_COHORT"
+  echo "Deployment script "
+  echo "./deply.sh BASTION_PUBLIC_IP TRAINING_COHORT"
 }
 
 if [ $# -eq 0 ]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
 BASTION_PUBLIC_IP=$1
@@ -41,7 +41,7 @@ Host bastion.${TRAINING_COHORT}.training
     User ec2-user
     HostName ${BASTION_PUBLIC_IP}
     DynamicForward 6789
-" >> ~/.ssh/config
+" >>~/.ssh/config
 
 echo "====SSH Config Updated===="
 
@@ -62,24 +62,29 @@ scp CitibikeApiProducer/build/libs/tw-citibike-apis-producer0.1.0.jar ingester.$
 echo "====Jar copied to ingester server===="
 
 ssh ingester.${TRAINING_COHORT}.training <<EOF
-set -e
+set -ex
 
 function kill_process {
     query=\$1
-    pid=`ps aux | grep \$query | grep -v "grep" |  awk "{print \\\$2}"`
 
-    if [ -z "\$pid" ];
+    pid_g=$(pgrep -lf \${query} | awk '{print \$1}')
+
+    pid=$(ps aux | grep \${query} | grep -v "grep" | awk '{print \$2}')
+
+    echo \${pid_g}
+    echo \${pid}
+
+    if [ -z "\${pid}" ];
     then
         echo "no \${query} process running"
     else
-        kill -9 \$pid
+        kill -9 \${pid}
     fi
 }
 
 station_information="station-information"
 station_status="station-status"
 station_san_francisco="station-san-francisco"
-
 
 echo "====Kill running producers===="
 
@@ -97,7 +102,6 @@ nohup java -jar /tmp/tw-citibike-apis-producer0.1.0.jar --spring.profiles.active
 echo "====Producers Deployed===="
 EOF
 
-
 echo "====Configure HDFS paths===="
 scp ./hdfs/seed.sh emr-master.${TRAINING_COHORT}.training:/tmp/hdfs-seed.sh
 
@@ -109,7 +113,6 @@ sh /tmp/hdfs-seed.sh
 EOF
 
 echo "====HDFS paths configured==="
-
 
 echo "====Copy Raw Data Saver Jar to EMR===="
 scp RawDataSaver/target/scala-2.11/tw-raw-data-saver_2.11-0.0.1.jar emr-master.${TRAINING_COHORT}.training:/tmp/
@@ -140,7 +143,6 @@ nohup spark-submit --master yarn --deploy-mode cluster --queue streaming --class
 
 echo "====Raw Data Saver Deployed===="
 EOF
-
 
 echo "====Copy Station Consumers Jar to EMR===="
 scp StationConsumer/target/scala-2.11/tw-station-consumer_2.11-0.0.1.jar emr-master.${TRAINING_COHORT}.training:/tmp/
