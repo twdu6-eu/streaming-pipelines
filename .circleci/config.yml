@@ -63,7 +63,7 @@ jobs:
             - run:
                   command: ./sbin/upgrade.sh $BASTION_PUBLIC_IP $TRAINING_COHORT $CIRCLE_SHA1 << parameters.environment >>
 
-    deploy:
+    run:
         <<: *defaults
         steps:
             - checkout
@@ -73,7 +73,7 @@ jobs:
                 fingerprints:
                   - "23:1f:be:07:c1:29:10:65:fb:d8:7a:a2:35:1d:01:6d"
             - run:
-                command: ./sbin/deploy.sh $BASTION_PUBLIC_IP $TRAINING_COHORT
+                command: ./sbin/run.sh $BASTION_PUBLIC_IP $TRAINING_COHORT
 
 workflows:
     version: 2
@@ -93,7 +93,7 @@ workflows:
                 environment: test
                 requires:
                     - upload
-            - approve-deploy:
+            - approve-prod:
                 type: approval
                 requires: 
                     - upgrade-test
@@ -101,7 +101,7 @@ workflows:
                   name: upgrade-prod
                   environment: prod
                   requires:
-                      - approve-deploy
-            - deploy:
+                      - approve-upgrade
+            - run:
                 requires:
                     - upgrade-prod

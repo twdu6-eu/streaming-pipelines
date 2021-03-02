@@ -67,12 +67,7 @@ set -ex
 function kill_process {
     query=\$1
 
-    pid_g=$(pgrep -lf \${query} | awk '{print \$1}')
-
     pid=$(ps aux | grep \${query} | grep -v "grep" | awk '{print \$2}')
-
-    echo \${pid_g}
-    echo \${pid}
 
     if [ -z "\${pid}" ];
     then
