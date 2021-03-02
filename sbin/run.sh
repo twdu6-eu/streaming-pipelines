@@ -4,6 +4,7 @@ set -ex
 
 BASTION_PUBLIC_IP=$1
 TRAINING_COHORT=$2
+ENVIRONMENT=$3
 ZOOKEEPER_CONFIG="kafka1.${TRAINING_COHORT}.training:2181,kafka2.${TRAINING_COHORT}.training:2181,kafka3.${TRAINING_COHORT}.training:2181"
 KAFKA_BROKERS="kafka1.${TRAINING_COHORT}.training:9092,kafka2.${TRAINING_COHORT}.training:9092,kafka3.${TRAINING_COHORT}.training:9092"
 
@@ -37,8 +38,9 @@ configure_zookeeper() {
   ssh kafka.${TRAINING_COHORT}.training <<EOF
 set -e
 export hdfs_server="emr-master.${TRAINING_COHORT}.training:8020"
-export kafka_server="${KAFKA_BROKERS}"
+export kafka_servers="${KAFKA_BROKERS}"
 export zk_command="zookeeper-shell localhost:2181"
+export ENVIRONMENT=${ENVIRONMENT}
 sh /tmp/zookeeper-seed.sh
 EOF
 }
@@ -60,9 +62,13 @@ kill_ingester_process() {
 
 run_ingester_process() {
   jar=$1
-  profile=$2
+  spring_profile=$2
   producer_topic=$3
-  nohup java -jar ${jar} --spring.profiles.active=${profile} --producer.topic=${producer_topic} --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/${profile}.log 2>/tmp/${profile}.error.log &
+  nohup java -jar ${jar} \
+    --spring.profiles.active=${spring_profile} \
+    --producer.topic=${producer_topic} \
+    --kafka.brokers=${KAFKA_BROKERS} \
+    1>/tmp/${spring_profile}.log 2>/tmp/${spring_profile}.error.log &
 }
 
 run_ingesters() {
@@ -70,27 +76,32 @@ run_ingesters() {
 set -e
 
 KAFKA_BROKERS="${KAFKA_BROKERS}"
+ENVIRONMENT="${ENVIRONMENT}"
 
 $(typeset -f kill_ingester_process)
 $(typeset -f run_ingester_process)
 
-station_information="station-information"
-station_status="station-status"
-station_san_francisco="station-san-francisco"
 
 echo "====Kill running producers===="
 
-kill_ingester_process \${station_information}
-kill_ingester_process \${station_status}
-kill_ingester_process \${station_san_francisco}
+kill_ingester_process ${ENVIRONMENT}_station_information
+kill_ingester_process ${ENVIRONMENT}_station_status
+kill_ingester_process ${ENVIRONMENT}_station_san_francisco
+kill_ingester_process station_information
+kill_ingester_process station_status
+kill_ingester_process station_san_francisco
 
 echo "====Runing Producers Killed===="
 
 echo "====Deploy Producers===="
 
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar \${station_information} station_information
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar \${station_san_francisco} station_data_sf
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar \${station_status} station_status
+#                    jar                                          spring-profile        producer-topic
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   ${ENVIRONMENT}_station_information
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco ${ENVIRONMENT}_station_data_sf
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        ${ENVIRONMENT}_station_status
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   station_information
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco station_data_sf
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        station_status
 
 echo "====Producers Deployed===="
 EOF
@@ -115,10 +126,10 @@ run_consumer_application() {
   jar=$1
   class=$2
   name=$3
-  zookeeperPrefix=$4
-  logPrefix=$5
+  logPrefix=$4
+  args=("${@:5}")
   echo -n "Running spark job ${name} ... "
-  nohup spark-submit --master yarn --deploy-mode cluster --queue streaming --class ${class} --name ${name} --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.0 --driver-memory 500M --conf spark.streaming.stopGracefullyOnShutdown=true --conf spark.executor.memory=2g --conf spark.cores.max=1 ${jar} ${ZOOKEEPER_CONFIG} ${zookeeperPrefix} 1>/tmp/${logPrefix}.log 2>/tmp/${logPrefix}.error.log &
+  nohup spark-submit --master yarn --deploy-mode cluster --queue streaming --class ${class} --name ${name} --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.0 --driver-memory 500M --conf spark.streaming.stopGracefullyOnShutdown=true --conf spark.executor.memory=2g --conf spark.cores.max=1 ${jar} ${ZOOKEEPER_CONFIG} ${args} 1>/tmp/${logPrefix}.log 2>/tmp/${logPrefix}.error.log &
   echo "done"
 }
 
@@ -128,6 +139,7 @@ set -e
 
 KAFKA_BROKERS="${KAFKA_BROKERS}"
 ZOOKEEPER_CONFIG="${ZOOKEEPER_CONFIG}"
+ENVIRONMENT="${ENVIRONMENT}"
 
 $(typeset -f kill_consumer_application)
 $(typeset -f run_consumer_application)
@@ -144,13 +156,14 @@ echo "====Old Raw Data Saver Killed===="
 
 echo "====Deploy Raw Data Saver===="
 
-#                        jar                                        class                           name                       zookeeperPrefix          logPrefix
-run_consumer_application /tmp/prod/tw-raw-data-saver_2.11-0.0.1.jar com.tw.apps.StationLocationApp  StationStatusSaverApp      "/tw/stationStatus"      "raw-station-status-data-saver"
-run_consumer_application /tmp/prod/tw-raw-data-saver_2.11-0.0.1.jar com.tw.apps.StationLocationApp  StationInformationSaverApp "/tw/stationInformation" "raw-station-information-data-saver"
-run_consumer_application /tmp/prod/tw-raw-data-saver_2.11-0.0.1.jar com.tw.apps.StationLocationApp  StationDataSFSaverApp      "/tw/stationDataSF"      "raw-station-data-sf-saver"
+#                        jar                                        class                           app name                   logPrefix                            zookeeperPath
+run_consumer_application /tmp/prod/tw-raw-data-saver_2.11-0.0.1.jar com.tw.apps.StationLocationApp  StationStatusSaverApp      "raw-station-status-data-saver"      "/tw/stationStatus"
+run_consumer_application /tmp/prod/tw-raw-data-saver_2.11-0.0.1.jar com.tw.apps.StationLocationApp  StationInformationSaverApp "raw-station-information-data-saver" "/tw/stationInformation"
+run_consumer_application /tmp/prod/tw-raw-data-saver_2.11-0.0.1.jar com.tw.apps.StationLocationApp  StationDataSFSaverApp      "raw-station-data-sf-saver"          "/tw/stationDataSF"
 
-run_consumer_application /tmp/prod/tw-station-consumer_2.11-0.0.1.jar        com.tw.apps.StationApp StationApp                 "/tw/unused"             "station-consumer"
-run_consumer_application /tmp/prod/tw-station-transformer-nyc_2.11-0.0.1.jar com.tw.apps.StationApp StationTransformerNYC      "/tw/unused"             "station-transformer-nyc"
+#                        jar                                        class                           app name                   logPrefix
+run_consumer_application /tmp/prod/tw-station-consumer_2.11-0.0.1.jar        com.tw.apps.StationApp StationApp                 "station-consumer"
+run_consumer_application /tmp/prod/tw-station-transformer-nyc_2.11-0.0.1.jar com.tw.apps.StationApp StationTransformerNYC      "station-transformer-nyc"
 
 echo "====Raw Data Saver Deployed===="
 EOF
