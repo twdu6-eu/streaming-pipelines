@@ -89,19 +89,19 @@ workflows:
                 requires:
                     - build
             - upgrade:
-                name: upgrade-test
+                name: upgrade-test-environment
                 environment: test
                 requires:
                     - upload
             - approve-prod:
                 type: approval
                 requires: 
-                    - upgrade-test
+                    - upgrade-test-environment
             - upgrade:
-                  name: upgrade-prod
+                  name: upgrade-prod-environment
                   environment: prod
                   requires:
-                      - approve-upgrade
+                      - approve-prod
             - run:
                 requires:
-                    - upgrade-prod
+                    - upgrade-prod-environment
