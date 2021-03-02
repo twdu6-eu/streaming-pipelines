@@ -57,7 +57,7 @@ EOF
 
 kill_ingester_process() {
   query=$1
-  (pgrep -lf "${query}" | awk '{ print $1 }' | xargs -L1 kill -9) || echo "No process is running"
+  (pgrep -f "${query}" | xargs -L1 kill -9) || echo "No process is running"
 }
 
 run_ingester_process() {
@@ -65,14 +65,12 @@ run_ingester_process() {
   spring_profile=$2
   producer_topic=$3
   echo -n "Running ${jar} with ${spring_profile} to produce ${producer_topic} ... "
-  nohup java -jar ${jar} --spring.profiles.active=${spring_profile} --producer.topic=${producer_topic} --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/${spring_profile}.log 2>/tmp/${spring_profile}.error.log &
+  nohup java -jar ${jar} --spring.profiles.active=${spring_profile} --producer.topic=${producer_topic} --kafka.brokers=${KAFKA_BROKERS} 1>/tmp/${producer_topic}.log 2>/tmp/${producer_topic}.error.log &
   echo "done"
 }
 
 run_ingesters() {
   ssh ingester.${TRAINING_COHORT}.training <<EOF
-set -e
-
 KAFKA_BROKERS="${KAFKA_BROKERS}"
 ENVIRONMENT="${ENVIRONMENT}"
 
@@ -94,12 +92,12 @@ echo "====Runing Producers Killed===="
 echo "====Deploy Producers===="
 
 #                    jar                                          spring-profile        producer-topic
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   ${ENVIRONMENT}_station_information
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco ${ENVIRONMENT}_station_data_sf
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        ${ENVIRONMENT}_station_status
 run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   station_information
 run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco station_data_sf
 run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        station_status
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   ${ENVIRONMENT}_station_information
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco ${ENVIRONMENT}_station_data_sf
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        ${ENVIRONMENT}_station_status
 
 echo "====Producers Deployed===="
 EOF
