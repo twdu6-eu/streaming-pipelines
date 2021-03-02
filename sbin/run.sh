@@ -80,24 +80,24 @@ $(typeset -f run_ingester_process)
 
 echo "====Kill running producers===="
 
-kill_ingester_process ${ENVIRONMENT}_station_information
-kill_ingester_process ${ENVIRONMENT}_station_status
-kill_ingester_process ${ENVIRONMENT}_station_san_francisco
-kill_ingester_process station_information
-kill_ingester_process station_status
-kill_ingester_process station_san_francisco
+kill_ingester_process ${ENVIRONMENT}-station-information
+kill_ingester_process ${ENVIRONMENT}-station-status
+kill_ingester_process ${ENVIRONMENT}-station-san-francisco
+kill_ingester_process station-information
+kill_ingester_process station-status
+kill_ingester_process station-san-francisco
 
 echo "====Runing Producers Killed===="
 
 echo "====Deploy Producers===="
 
 #                    jar                                          spring-profile        producer-topic
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   station_information
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco station_data_sf
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        station_status
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_information   ${ENVIRONMENT}_station_information
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_san_francisco ${ENVIRONMENT}_station_data_sf
-run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station_status        ${ENVIRONMENT}_station_status
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station-information   station_information
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station-san-francisco station_data_sf
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station-status        station_status
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station-information   ${ENVIRONMENT}_station_information
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station-san-francisco ${ENVIRONMENT}_station_data_sf
+run_ingester_process /tmp/prod/tw-citibike-apis-producer0.1.0.jar station-status        ${ENVIRONMENT}_station_status
 
 echo "====Producers Deployed===="
 EOF
