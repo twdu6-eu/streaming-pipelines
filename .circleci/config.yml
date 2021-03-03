@@ -65,6 +65,9 @@ jobs:
 
     run:
         <<: *defaults
+        parameters:
+            environment:
+                type: string
         steps:
             - checkout
             - attach_workspace:
@@ -73,7 +76,7 @@ jobs:
                 fingerprints:
                   - "23:1f:be:07:c1:29:10:65:fb:d8:7a:a2:35:1d:01:6d"
             - run:
-                command: ./sbin/run.sh $BASTION_PUBLIC_IP $TRAINING_COHORT
+                command: ./sbin/run.sh $BASTION_PUBLIC_IP $TRAINING_COHORT << parameters.environment >>
 
 workflows:
     version: 2
@@ -98,10 +101,12 @@ workflows:
                 requires: 
                     - upgrade-test-environment
             - upgrade:
-                  name: upgrade-prod-environment
-                  environment: prod
-                  requires:
-                      - approve-prod
+                name: upgrade-prod-environment
+                environment: prod
+                requires:
+                    - approve-prod
             - run:
+                name: run-prod
+                environment: prod
                 requires:
                     - upgrade-prod-environment
