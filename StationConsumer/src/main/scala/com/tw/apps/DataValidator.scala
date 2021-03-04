@@ -12,7 +12,9 @@ object DataValidator {
       .onData(dataDF)
       .addCheck(
         Check(CheckLevel.Error, "unit testing my data")
-          .isComplete("latitude"))
+          .isPositive("bikes_available", _ > 0)
+          .isUnique("station_id")
+          .isPositive("docks_available", _ > 0))
       .run()
   }
 }
