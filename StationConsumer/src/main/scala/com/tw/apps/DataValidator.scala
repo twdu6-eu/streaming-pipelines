@@ -13,7 +13,7 @@ object DataValidator {
       .appName("StationConsumerDataValidator")
       .getOrCreate()
 
-    val stationDataDF = spark.read.format("csv").load(dockeargs(0))
+    val stationDataDF = spark.read.format("csv").option("header", true).load(args(0))
     val verificationResult = validate(stationDataDF)
 
     printReport(verificationResult)
